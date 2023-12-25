@@ -14,11 +14,11 @@ Material with multiple textures.
 
 - lightweight and easy to use
 
-- based on 'threejs' native material
+- based on `threejs` native material
 
 - support interpolation animation
 
-- support 'typescript'
+- support `typescript`
 
 ## Install
 
