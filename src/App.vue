@@ -24,9 +24,9 @@ camera.position.y += 10
 
 const textureLoader = new THREE.TextureLoader()
 const textures = [
-  '/images/red.png',
-  '/images/green.png',
-  '/images/blue.png'
+  './images/red.png',
+  './images/green.png',
+  './images/blue.png'
 ].map((url) => {
   return textureLoader.load(url)
 })
