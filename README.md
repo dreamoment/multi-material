@@ -6,15 +6,19 @@ Language: English | [中文简体](README_zh_cn.md)
 
 ## What is multi-material ?
 
-Achieve the X-ray effect of objects as if there were parallel worlds.
+Material with multiple textures.
+
+> Make sure that the version of `threejs` is greater than `r118`, otherwise the shader code will error because the version of `glsl` is too low.
 
 ## Features
 
-- Lightweight and easy to use
+- lightweight and easy to use
 
-- It relies on `three.js` and does not mandate the `three.js` version
+- based on 'threejs' native material
 
-- support`typescript`
+- support interpolation animation
+
+- support 'typescript'
 
 ## Install
 
@@ -27,7 +31,8 @@ npm i @dreamoment/multi-material
 ```
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import ParaWorld from '../package/index'
+import TWEEN from '@tweenjs/tween.js'
+import MultiMaterial from '../package/index'
 
 
 const scene = new THREE.Scene()
@@ -46,67 +51,116 @@ const controls = new OrbitControls(camera, renderer.domElement)
 camera.position.y += 10
 
 
-// edit scene
-const createWall = () => {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), new THREE.MeshPhysicalMaterial({ color: 0x00ff00 }))
-  return mesh
-}
-const _player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhysicalMaterial({ color: 0xff0000 }))
-const _wall1 = createWall()
-const _wall2 = createWall()
-const _wall3 = createWall()
-_wall1.position.set(0, 0, 3)
-_wall2.position.set(3, 0, 3)
-_wall3.position.set(6, 0, 3)
-scene.add(_player, _wall1, _wall2, _wall3)
+const textureLoader = new THREE.TextureLoader()
+const textures = [
+  '/images/red.png',
+  '/images/green.png',
+  '/images/blue.png'
+].map((url) => {
+  return textureLoader.load(url)
+})
 
-// enter para world
-ParaWorld.createTargetByMaterial(_player, new THREE.MeshPhysicalMaterial({ color: 0x0000ff }))
-ParaWorld.createCover(_wall1)
-ParaWorld.createCover(_wall2)
+const geometry = new THREE.BoxGeometry(5, 5, 5)
+const multiMaterial = new MultiMaterial(new THREE.MeshStandardMaterial())
+multiMaterial.addTextures(textures)
+
+// or
+// const multiMaterial = new MultiMaterial(new THREE.MeshStandardMaterial({
+//   map: textures[0]
+// }))
+// multiMaterial.addTexture(textures[1])
+// multiMaterial.addTexture(textures[2])
+
+const material = multiMaterial.getMaterial()
+const mesh = new THREE.Mesh(geometry, material)
+scene.add(mesh)
 
 const animate = () => {
   controls.update()
+  TWEEN.update()
   renderer.render(scene, camera)
 }
 
-const onWindowResize = () => {
+window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
   renderer.setSize(window.innerWidth, window.innerHeight)
-}
+})
+
+
+let index = 0
+const idInterval = setInterval(() => {
+  (index < textures.length - 1) ? index++ : index = 0
+  const changeTexture = (index) => {
+    // no tween animation
+    // multiMaterial.switchTexture(index)
+    multiMaterial.switchTexture(index, (lerp) => {
+      lerp.value = 0
+      new TWEEN.Tween(lerp)
+          .to({ value: 1 }, 1000)
+          .start()
+    })
+  }
+  changeTexture(index)
+}, 2000)
 
 renderer.setAnimationLoop(animate)
-
-window.addEventListener('resize', onWindowResize)
 ```
 
 ## API
 
-### `static`renderOrder
-
-Render order, used as a base for calculation。
-
-### `static`createTargetByMaterial
-
-Pass uniform materials to create transformable objects, such as players. (For simple models of a single material)
-
 ```
-ParaWorld.createTargetByMaterial(target: THREE.Object3D, material: THREE.Material): THREE.Group
-```
+type MaterialEnabled = THREE.LineBasicMaterial |
+    THREE.MeshBasicMaterial |
+    THREE.MeshDepthMaterial |
+    THREE.MeshDistanceMaterial |
+    THREE.MeshLambertMaterial |
+    THREE.MeshMatcapMaterial |
+    THREE.MeshPhongMaterial |
+    THREE.MeshPhysicalMaterial |
+    THREE.MeshStandardMaterial |
+    THREE.MeshToonMaterial |
+    THREE.PointsMaterial |
+    THREE.SpriteMaterial
 
-### `static`createTargetByObject3D
-
-Pass custom objects and create transformable objects, such as players. (For complex models with multiple materials) This custom object is a clone of a different new material based on the source object.
-
-```
-ParaWorld.createTargetByMaterial(target: THREE.Object3D, clone: THREE.Object3D): THREE.Group
+new MultiMaterial(material: MaterialEnabled)
 ```
 
-### `static`createCover
+### getMaterial
 
-Create an occluding object, such as a wall.
+Gets the `threejs` material instance.
 
 ```
-ParaWorld.createCover(target: THREE.Object3D): THREE.Group
+getMaterial(): MaterialEnabled
+```
+
+### switchTexture
+
+Switch textures.
+
+Interpolation animation can be implemented by changing the value of the callback parameter `lerp.value`.
+
+```
+interface UniformNumber {
+    value: number | null
+}
+type CallbackUniformNumber = (uniformNumber: UniformNumber) => void
+
+switchTexture(index: number, callback?: CallbackUniformNumber): void
+```
+
+### addTexture
+
+Add a single texture.
+
+```
+addTexture(texture: THREE.Texture): void
+```
+
+### addTextures
+
+Add multiple textures.
+
+```
+addTextures(textures: THREE.Texture[]): void
 ```
