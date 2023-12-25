@@ -32,7 +32,7 @@ npm i @dreamoment/multi-material
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import TWEEN from '@tweenjs/tween.js'
-import MultiMaterial from '../package/index'
+import MultiMaterial from '@dreamoment/multi-material'
 
 
 const scene = new THREE.Scene()
